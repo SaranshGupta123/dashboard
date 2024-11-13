@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Dashboard</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2ecc71;
+            --button-bg: linear-gradient(135deg, #f57c00, #fbc02d);
+            --bg-color: #f4f6f9;
+            --text-color: #333;
+            --card-bg: #fff;
+        }
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --text-color: #eee;
+            --card-bg: #2a2a2a;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .sidebar {
+            width: 250px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: #fff;
+            height: 100vh;
+            position: fixed;
+            padding-top: 1rem;
+            transition: width 0.3s;
+            text-align: center;
+            top: 0;
+            left: 0;
+        }
+        .sidebar.collapsed {
+            width: 0;
+            overflow: hidden;
+        }
+        .sidebar h4 {
+            font-size: 1.3rem;
+            font-weight: bold;
+        }
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .sidebar ul li a {
+            color: #fff;
+            display: block;
+            padding: 12px 20px;
+            text-decoration: none;
+            font-size: 1rem;
+        }
+        .main-content {
+            margin-left: 250px;
+            padding: 30px;
+            transition: margin-left 0.3s;
+        }
+        .sidebar.collapsed + .main-content {
+            margin-left: 0;
+        }
+        .card,
+        .modal-content {
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            border: none;
+            border-radius: 8px;
+            transition: background-color 0.3s ease;
+        }
+        .btn-primary,
+        .theme-toggle,
+        .btn-outline-primary,
+        .update-data {
+            background: var(--button-bg);
+            border: none;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 1rem;
+            transition: background 0.3s;
+            cursor: pointer;
+            width: 100%;
+            max-width: 200px;
+        }
+        .tn-primary:hover,
+        .btn-outline-primary:hover,
+        .update-data:hover {
+            background: #ffa000;
+        }
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            cursor: pointer;
+        }
+        .hamburger {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            cursor: pointer;
+            z-index: 1000;
+        }
+        .hamburger div {
+            width: 25px;
+            height: 3px;
+            background-color: #333;
+            margin: 5px 0;
+            transition: 0.4s;
+        }
+        .hamburger:hover div {
+            background-color: #ffa000;
+        }
+        .hamburger.active div:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 5px);
+        }
+        .hamburger.active div:nth-child(2) {
+            opacity: 0;
+        }
+        .hamburger.active div:nth-child(3) {
+            transform: rotate(-45deg) translate(5px, -5px);
+        }
+        .stats-card {
+            background-color: var(--card-bg-alt);
+            border: 1px solid #d0dae2;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+            border-radius: 10px;
+        }
+        .stats-card:hover {
+            background-color: var(--card-hover);
+        }
+        .stats-title {
+            font-size: 1.2rem;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+        .stats-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #333;
+        }
+        .extra-content {
+            margin-top: 10px;
+        }
+        .update-data {
+            margin-bottom: 20px;
+        }
+        .input-container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .input-container h5 {
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+        .form-label {
+            font-weight: bold;
+            color: var(--text-color);
+        }
+        .update-data {
+            background: var(--button-bg);
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <aside class="sidebar" id="sidebar">
+        <h4>Control Panel</h4>
+        <ul>
+            <li><a href="#" onclick="showContent('home')">Home Overview</a></li>
+            <li><a href="#" onclick="showContent('reports')">Data Reports</a></li>
+            <li><a href="#" onclick="showContent('settings')">Adjust Settings</a></li>
+            <li><a href="#" onclick="showContent('alerts')">Alerts</a></li>
+        </ul>
+    </aside>
+    <div class="hamburger" id="sidebarToggle" onclick="toggleSidebar()">
+        <div></div>
+        <div></div>
+        <div></div>
+    </div>
+    <div class="theme-toggle btn btn-secondary" onclick="toggleTheme()">Switch Theme</div>
+    <main class="main-content">
+        <header class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Interactive Dashboard</h2>
+        </header>
+        <section id="content-section" class="dashboard-body">
+            <p>Select an option from the sidebar to display content.</p>
+        </section>
+        <section class="dashboard-body">
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="stats-card">
+                        <h5 class="stats-title">Total Sales</h5>
+                        <p class="stats-value">1,500</p>
+                        <p>Track your daily and monthly sales performance</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stats-card">
+                        <h5 class="stats-title">Revenue</h5>
+                        <p class="stats-value">$3,200</p>
+                        <p>View revenue trends and set revenue goals</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stats-card">
+                        <h5 class="stats-title">Client Count</h5>
+                        <p class="stats-value">2,450</p>
+                        <p>Analyze client acquisition and retention rates</p>
+                    </div>
+                </div>
+            </div>
+            <div class="row mb-4">
+                <div class="col-lg-8">
+                    <canvas id="chart1"></canvas>
+                </div>
+                <div class="col-lg-4">
+                    <canvas id="colorfulDiagram"></canvas>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <div class="input-container">
+                        <h5>Update Chart Data</h5>
+                        <div id="dataInputs">
+                            <div class="mb-3">
+                                <label for="input1" class="form-label">January Sales:</label>
+                                <input type="number" id="input1" value="120" class="form-control" placeholder="Enter sales for January">
+                            </div>
+                            <div class="mb-3">
+                                <label for="input2" class="form-label">February Sales:</label>
+                                <input type="number" id="input2" value="190" class="form-control" placeholder="Enter sales for February">
+                            </div>
+                            <div class="mb-3">
+                                <label for="input3" class="form-label">March Sales:</label>
+                                <input type="number" id="input3" value="300" class="form-control" placeholder="Enter sales for March">
+                            </div>
+                            <div class="mb-3">
+                                <label for="input4" class="form-label">April Sales:</label>
+                                <input type="number" id="input4" value="500" class="form-control" placeholder="Enter sales for April">
+                            </div>
+                            <div class="mb-3">
+                                <label for="input5" class="form-label">May Sales:</label>
+                                <input type="number" id="input5" value="250" class="form-control" placeholder="Enter sales for May">
+                            </div>
+                        </div>
+                        <button class="update-data mt-3" onclick="updateChartData()">Update Data</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <div class="text-center mt-3">
+            <button class="btn btn-primary" onclick="toggleExtraContent()">View More</button>
+        </div>
+        <section class="extra-content text-center mt-4" id="extraContent" style="display: none; opacity: 0; transition: opacity 0.3s ease;">
+            <div class="info-box p-4" style="border: 2px solid #3498db; background-color: #f9f9f9; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
+                <h4>Additional Information</h4>
+                <p>Welcome to the extended information section. Here, you could provide additional insights or settings.</p>
+                <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Ex, at veritatis. Animi impedit, fugit tenetur quasi voluptatibus corrupti molestiae expedita atque sequi suscipit eos doloremque, iusto dolore? Molestiae, iste beatae.</p>
+                <p>Lorem ipsum, dolor sit amet consectetur adipisicing elit. Soluta incidunt, ipsa animi sint excepturi error fugit labore, porro asperiores pariatur necessitatibus inventore temporibus quas dignissimos maiores non accusamus quaerat? Dicta?</p>
+            </div>
+        </section>
+    </main>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/2.11.6/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.3.0/js/bootstrap.min.js"></script>
+    <script>
+        const ctx1 = document.getElementById('chart1').getContext('2d');
+        const ctx2 = document.getElementById('colorfulDiagram').getContext('2d');
+        const initialData = [120, 190, 300, 500, 250];
+        const labelsMonthly = ['Jan', 'Feb', 'Mar', 'Apr', 'May'];
+        const chart1 = new Chart(ctx1, {
+            type: 'bar',
+            data: {
+                labels: labelsMonthly,
+                datasets: [{
+                    label: 'Monthly Sales',
+                    data: initialData,
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)'
+                }]
+            }
+        });
+        const colorfulDiagram = new Chart(ctx2, {
+            type: 'doughnut',
+            data: {
+                labels: labelsMonthly,
+                datasets: [{
+                    label: 'Sales Breakdown',
+                    data: initialData,
+                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF']
+                }]
+            }
+        });
+        function updateChartData() {
+            const newData = [
+                parseInt(document.getElementById('input1').value) || 0,
+                parseInt(document.getElementById('input2').value) || 0,
+                parseInt(document.getElementById('input3').value) || 0,
+                parseInt(document.getElementById('input4').value) || 0,
+                parseInt(document.getElementById('input5').value) || 0,
+            ];
+            chart1.data.datasets[0].data = newData;
+            chart1.update();
+            colorfulDiagram.data.datasets[0].data = newData;
+            colorfulDiagram.update();
+            alert("Data updated successfully!");
+        }
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            sidebar.classList.toggle('collapsed');
+            sidebarToggle.classList.toggle('active');
+        }
+        function showContent(section) {
+            const contentSection = document.getElementById('content-section');
+            switch (section) {
+                case 'home':
+                    contentSection.innerHTML = '<h4>Home Overview</h4><p>Welcome to the home section. Track daily performance here.</p>';
+                    break;
+                case 'reports':
+                    contentSection.innerHTML = '<h4>Data Reports</h4><p>View analytics and reports, including data trends and performance stats.</p>';
+                    break;
+                case 'settings':
+                    contentSection.innerHTML = '<h4>Adjust Settings</h4><p>Change application preferences and update system settings here.</p>';
+                    break;
+                case 'alerts':
+                    contentSection.innerHTML = '<h4>Alerts</h4><p>Manage system alerts, warnings, and notifications in this section.</p>';
+                    break;
+                default:
+                    contentSection.innerHTML = '<p>Select an option from the sidebar to display content.</p>';
+            }
+        }
+        function toggleExtraContent() {
+            const extraContent = document.getElementById("extraContent");
+            const button = document.querySelector("button[onclick='toggleExtraContent()']");
+            if (extraContent.style.display === "none") {
+                extraContent.style.display = "block";
+                setTimeout(() => { extraContent.style.opacity = "1"; }, 10);
+                button.textContent = "View Less";
+            } else {
+                extraContent.style.opacity = "0";
+                setTimeout(() => { extraContent.style.display = "none"; }, 300);
+                button.textContent = "View More";
+            }
+        }
+        const themes = [
+            { "--primary-color": "#3498db", "--secondary-color": "#2ecc71", "--bg-color": "#f4f6f9", "--text-color": "#333", "--card-bg": "#fff" },
+            { "--primary-color": "#e74c3c", "--secondary-color": "#f39c12", "--bg-color": "#fcf6f5", "--text-color": "#2c3e50", "--card-bg": "#fafafa" },
+            { "--primary-color": "#9b59b6", "--secondary-color": "#8e44ad", "--bg-color": "#f8f0fc", "--text-color": "#2d3436", "--card-bg": "#ffffff" },
+            { "--primary-color": "#2c3e50", "--secondary-color": "#3498db", "--bg-color": "#ecf0f1", "--text-color": "#2c3e50", "--card-bg": "#ffffff" },
+            { "--primary-color": "#1abc9c", "--secondary-color": "#16a085", "--bg-color": "#e8f8f5", "--text-color": "#333", "--card-bg": "#ffffff" },
+            { "--primary-color": "#34495e", "--secondary-color": "#2ecc71", "--bg-color": "#dfe6e9", "--text-color": "#2d3436", "--card-bg": "#ffffff" }
+        ];
+        let currentThemeIndex = 0;
+        function applyTheme(theme) {
+            Object.keys(theme).forEach(key => {
+                document.documentElement.style.setProperty(key, theme[key]);
+            });
+        }
+        function toggleTheme() {
+            currentThemeIndex = (currentThemeIndex + 1) % themes.length;
+            applyTheme(themes[currentThemeIndex]);
+        }
+        applyTheme(themes[currentThemeIndex]);
+        function showContent(section) {
+            const contentSection = document.getElementById('content-section');
+            switch (section) {
+                case 'home':
+                    contentSection.innerHTML = '<h4>Home Overview</h4><p>Welcome to the home section. Track daily performance here.</p>';
+                    break;
+                case 'reports':
+                    contentSection.innerHTML = '<h4>Data Reports</h4><p>View analytics and reports, including data trends and performance stats.</p>';
+                    break;
+                case 'settings':
+                    contentSection.innerHTML = '<h4>Adjust Settings</h4><p>Change application preferences and update system settings here.</p>';
+                    break;
+                case 'alerts':
+                    contentSection.innerHTML = '<h4>Alerts</h4><p>Manage system alerts, warnings, and notifications in this section.</p>';
+                    break;
+                default:
+                    contentSection.innerHTML = '<p>Select an option from the sidebar to display content.</p>';
+            }
+        }
+    </script>
+</body>
+</html>
